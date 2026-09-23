@@ -70,7 +70,9 @@ bayern_pan_spatial_plays = bayern_pan_spatial_plays_copy |>
     pan_3_fgm = cumsum((PlayType == "3PM") & TeamCode == "PAN"),
     mun_3_fga = cumsum((PlayType == "3PA" | PlayType == "3PM") & TeamCode == "MUN"),
     mun_3_fgm = cumsum((PlayType == "3PM") & TeamCode == "MUN"),
-    pan_fg_attempts = pan_2_fga + pan_3_fga
+    pan_fg_attempts = pan_2_fga + pan_3_fga,
+    mun_fg_attempts = mun_2_fga + mun_3_fga, 
+    pan_fg_made = 
   )
 
 
