@@ -58,7 +58,18 @@ bayern_pan_spatial_plays = left_join(bayern_pan_plays, bayern_pan_shot_locations
   fill(pan_pts, mun_pts, .direction = "down")
 
 
-bayern_pan_spatial_plays_copy = bayern_pan_spatial_plays
+redundant_plays = c("TOUT", "TOUT_TV", "OUT", "IN", "CCH")
+
+bayern_pan_spatial_plays_copy = bayern_pan_spatial_plays |> 
+  filter(!PlayType %in% redundant_plays)
+
+shooting_zones = bayern_pan_spatial_plays_copy |> 
+  group_by(Zone) |> 
+  summarise(
+       total_shots = n()
+  )
+
+
 
 bayern_pan_spatial_plays = bayern_pan_spatial_plays_copy |> 
   mutate(
@@ -72,7 +83,40 @@ bayern_pan_spatial_plays = bayern_pan_spatial_plays_copy |>
     mun_3_fgm = cumsum((PlayType == "3PM") & TeamCode == "MUN"),
     pan_fg_attempts = pan_2_fga + pan_3_fga,
     mun_fg_attempts = mun_2_fga + mun_3_fga, 
-    pan_fg_made = 
+    pan_fg_made = pan_2_fgm + pan_3_fgm,
+    mun_fg_made = mun_2_fgm + mun_3_fgm,
+    pan_fg_pct = (pan_fg_made/pan_fg_attempts) * 100,
+    mun_fg_pct = (mun_fg_made/mun_fg_attempts) * 100,
+    pan_3fg_pct = (pan_3_fgm/pan_3_fga) * 100,
+    mun_3fg_pct = (mun_3_fgm/mun_3_fga) * 100,
+    pan_fta = cumsum((PlayType == "FTM" | PlayType == "FTA") & TeamCode == "PAN"),
+    mun_fta = cumsum((PlayType == "FTM" | PlayType == "FTA") & TeamCode == "MUN"),
+    pan_ftm = cumsum((PlayType == "FTM") & TeamCode == "PAN"),
+    mun_ftm = cumsum((PlayType == "FTM") & TeamCode == "MUN"),
+    pan_ft_pct = (pan_ftm/pan_fta) * 100,
+    mun_ft_pct = (mun_ftm/mun_fta) * 100,
+    pan_efg_pct = ((pan_fg_made + (0.5 * pan_3_fgm))/pan_fg_attempts) * 100,
+    mun_efg_pct = ((mun_fg_made + (0.5 * mun_3_fgm))/mun_fg_attempts) * 100,
+    pan_true_shooting_pct = (pan_pts/(2 * pan_fg_attempts + .44 * pan_fta)) * 100,
+    mun_true_shooting_pct = (mun_pts/(2 * mun_fg_attempts + .44 * mun_fta)) * 100,
+    pan_zone_a_attempts = Zone == "A" & TeamCode == "PAN",
+    mun_zone_a_attempts = Zone == "A" & TeamCode == "MUN",
+    pan_zone_b_attempts = Zone == "B" & TeamCode == "PAN",
+    mun_zone_b_attempts = Zone == "B" & TeamCode == "MUN",
+    pan_zone_c_attempts = Zone == "C" & TeamCode == "PAN",
+    mun_zone_c_attempts = Zone == "C" & TeamCode == "MUN",
+    pan_zone_d_attempts = Zone == "D" & TeamCode == "PAN",
+    mun_zone_d_attempts = Zone == "D" & TeamCode == "MUN",
+    pan_zone_e_attempts = Zone == "E" & TeamCode == "PAN",
+    mun_zone_e_attempts = Zone == "E" & TeamCode == "MUN",
+    pan_zone_f_attempts = Zone == "F" & TeamCode == "PAN",
+    mun_zone_f_attempts = Zone == "F" & TeamCode == "MUN",
+    pan_zone_g_attempts = Zone == "G" & TeamCode == "PAN",
+    mun_zone_g_attempts = Zone == "G" & TeamCode == "MUN",
+    pan_zone_h_attempts = Zone == "H" & TeamCode == "PAN",
+    mun_zone_h_attemtps = Zone == "H" & TeamCode == "MUN",
+    pan_zone_i_attempts = Zone == "I" & TeamCode == "PAN",
+    mun_zone_i_attempts = Zone == "I" & TeamCode == "MUN"
   )
 
 
