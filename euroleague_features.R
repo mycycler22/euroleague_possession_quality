@@ -64,10 +64,12 @@ bayern_pan_spatial_plays_copy = bayern_pan_spatial_plays |>
   filter(!PlayType %in% redundant_plays)
 
 shooting_zones = bayern_pan_spatial_plays_copy |> 
-  group_by(Zone) |> 
+  group_by(TeamCode, Zone) |> 
   summarise(
        total_shots = n()
-  )
+  ) |> 
+  filter(Zone != " ") |> 
+  ungroup()
 
 
 
@@ -98,29 +100,62 @@ bayern_pan_spatial_plays = bayern_pan_spatial_plays_copy |>
     pan_efg_pct = ((pan_fg_made + (0.5 * pan_3_fgm))/pan_fg_attempts) * 100,
     mun_efg_pct = ((mun_fg_made + (0.5 * mun_3_fgm))/mun_fg_attempts) * 100,
     pan_true_shooting_pct = (pan_pts/(2 * pan_fg_attempts + .44 * pan_fta)) * 100,
-    mun_true_shooting_pct = (mun_pts/(2 * mun_fg_attempts + .44 * mun_fta)) * 100,
-    pan_zone_a_attempts = Zone == "A" & TeamCode == "PAN",
-    mun_zone_a_attempts = Zone == "A" & TeamCode == "MUN",
-    pan_zone_b_attempts = Zone == "B" & TeamCode == "PAN",
-    mun_zone_b_attempts = Zone == "B" & TeamCode == "MUN",
-    pan_zone_c_attempts = Zone == "C" & TeamCode == "PAN",
-    mun_zone_c_attempts = Zone == "C" & TeamCode == "MUN",
-    pan_zone_d_attempts = Zone == "D" & TeamCode == "PAN",
-    mun_zone_d_attempts = Zone == "D" & TeamCode == "MUN",
-    pan_zone_e_attempts = Zone == "E" & TeamCode == "PAN",
-    mun_zone_e_attempts = Zone == "E" & TeamCode == "MUN",
-    pan_zone_f_attempts = Zone == "F" & TeamCode == "PAN",
-    mun_zone_f_attempts = Zone == "F" & TeamCode == "MUN",
-    pan_zone_g_attempts = Zone == "G" & TeamCode == "PAN",
-    mun_zone_g_attempts = Zone == "G" & TeamCode == "MUN",
-    pan_zone_h_attempts = Zone == "H" & TeamCode == "PAN",
-    mun_zone_h_attemtps = Zone == "H" & TeamCode == "MUN",
-    pan_zone_i_attempts = Zone == "I" & TeamCode == "PAN",
-    mun_zone_i_attempts = Zone == "I" & TeamCode == "MUN"
+    mun_true_shooting_pct = (mun_pts/(2 * mun_fg_attempts + .44 * mun_fta)) * 100
   )
 
+ARC_RADIUS = 675
+X_CORNER = 660
+Y_CORNER = sqrt((ARC_RADIUS^2) - (X_CORNER^2))
 
+new_zones = function(x, y){
+  r = sqrt(x^2 + y^2)
+  phi = atan2(x, y) * 180/pi
+  three = ifelse(y > Y_CORNER, r > ARC_RADIUS, abs(x) > X_CORNER)
 
+  case_when(
+    is.na(x) | is.na(y) ~ NA_character_,
+    x == -1 & y == -1 ~ NA_character_,
+    !three & r < 125 ~ "A",
+    !three & r < 250 & phi < -30 ~ "B",
+    !three & r < 250 & phi <= 30 ~ "C",
+    !three & r < 250 ~ "D",
+    !three & phi < -70 ~ "E",
+    !three & phi < -30 ~ "F",
+    !three & phi <= 30 ~ "G",
+    !three & phi <= 70 ~ "H",
+    !three ~ "I",
+    y <= Y_CORNER & x < 0 ~ "J",
+    y <= Y_CORNER ~ "N",
+    phi < -30 ~ "K",
+    phi <= 30 ~ "L",
+    phi > 30 ~ "M",
+    .default = NA_character_
+  )
+}
+
+zone_levels = LETTERS[1:14]
+
+zone_key = tribble(
+  ~Zone, ~name,
+  "A", "Under Basket",
+  "B", "Close Left",
+  "C", "Close Middle",
+  "D", "Close Right",
+  "E", "Mid-Range Left",
+  "F", "Mid-Range Left-Center",
+  "G", "Mid-Range Center",
+  "H", "Mid-Range Right-Center",
+  "I", "Mid-Range Right",
+  "J", "Left-Corner 3",
+  "K", "Left-Wing 3",
+  "L", "Top of Key 3",
+  "M", "Right-Wing 3",
+  "N", "Right Corner 3"
+)
+
+trial_table = bayern_pan_spatial_plays |> 
+  mutate(Zone = new_zones(CoordX, CoordY)) |> 
+  left_join(zone_key, by = "Zone")
 
 
 
